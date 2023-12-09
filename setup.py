@@ -35,5 +35,6 @@ setuptools.setup(
         "requests==2.28.1",
         "SQLAlchemy==1.4.44",
         "urllib3==1.26.13",
+        "selenium==4.16.0"
     ]
 )

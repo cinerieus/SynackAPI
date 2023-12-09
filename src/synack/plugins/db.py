@@ -44,8 +44,8 @@ class Db(Plugin):
                 db_c = Category(id=c['category_id'])
                 session.add(db_c)
             db_c.name = c['category_name']
-            db_c.passed_practical = c['practical_assessment']['passed']
-            db_c.passed_written = c['written_assessment']['passed']
+            db_c.passed_practical = c['passed']
+            db_c.passed_written = c['passed']
         session.commit()
         session.close()
 

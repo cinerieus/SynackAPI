@@ -5,6 +5,8 @@ Functions related to handling and checking authentication.
 
 import pyotp
 import re
+from selenium import webdriver
+from time import sleep
 
 from .base import Plugin
 
@@ -17,25 +19,17 @@ class Auth(Plugin):
                     plugin.lower(),
                     self.registry.get(plugin)(self.state))
 
-    def build_otp(self):
-        """Generate and return a OTP."""
-        totp = pyotp.TOTP(self.db.otp_secret)
-        totp.digits = 7
-        totp.interval = 10
-        totp.issuer = 'synack'
-        return totp.now()
-
     def get_api_token(self):
         """Log in to get a new API token."""
         if self.users.get_profile():
             return self.db.api_token
         csrf = self.get_login_csrf()
-        progress_token = None
         grant_token = None
+        duo_url = None
         if csrf:
-            progress_token = self.get_login_progress_token(csrf)
-        if progress_token:
-            grant_token = self.get_login_grant_token(csrf, progress_token)
+            duo_url = self.get_duo_url(csrf)
+        if duo_url:
+            grant_token = self.get_login_grant_token(duo_url)
         if grant_token:
             url = 'https://platform.synack.com/'
             headers = {
@@ -61,24 +55,8 @@ class Auth(Plugin):
                       res.text)
         return m.group(1)
 
-    def get_login_grant_token(self, csrf, progress_token):
-        """Get grant token from authy totp verification"""
-        headers = {
-            'X-Csrf-Token': csrf
-        }
-        data = {
-            "authy_token": self.build_otp(),
-            "progress_token": progress_token
-        }
-        res = self.api.login('POST',
-                             'authenticate',
-                             headers=headers,
-                             data=data)
-        if res.status_code == 200:
-            return res.json().get("grant_token")
-
-    def get_login_progress_token(self, csrf):
-        """Get progress token from email and password login"""
+    def get_duo_url(self, csrf):
+        """Get Duo url"""
         headers = {
             'X-CSRF-Token': csrf
         }
@@ -91,7 +69,20 @@ class Auth(Plugin):
                              headers=headers,
                              data=data)
         if res.status_code == 200:
-            return res.json().get("progress_token")
+            return res.json().get("duo_auth_url")
+
+    def get_login_grant_token(self, duo_url):
+        """Gets grant token after Duo MFA workaround"""
+        options = webdriver.FirefoxOptions()
+        options.add_argument("-headless")
+        options.add_argument(duo_url)
+        with webdriver.Firefox(options = options) as driver:
+            while True:
+                check_url = driver.current_url
+                if 'grant_token' in check_url:
+                    grant_token = check_url.split("grant_token=",1)[1]
+                    break
+        return grant_token
 
     def get_notifications_token(self):
         """Request a new Notifications Token"""

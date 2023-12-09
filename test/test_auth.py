@@ -24,17 +24,6 @@ class AuthTestCase(unittest.TestCase):
         self.auth.db = MagicMock()
         self.auth.users = MagicMock()
 
-    def test_build_otp(self):
-        """Should generate a OTP"""
-        pyotp.TOTP = MagicMock()
-        self.auth.db.otp_secret = "123"
-        self.auth.build_otp()
-        self.assertEqual(7, pyotp.TOTP.return_value.digits)
-        self.assertEqual(10, pyotp.TOTP.return_value.interval)
-        self.assertEqual('synack', pyotp.TOTP.return_value.issuer)
-        pyotp.TOTP.assert_called_with('123')
-        pyotp.TOTP.return_value.now.assert_called_with()
-
     def test_get_api_token(self):
         """Should complete the login workflow when check fails"""
         self.auth.db.api_token = ""
@@ -81,28 +70,6 @@ class AuthTestCase(unittest.TestCase):
 
         returned_gt = self.auth.get_login_grant_token('abcde', '789456123')
         self.assertEqual("qwfars", returned_gt)
-        self.auth.api.login.assert_called_with("POST",
-                                               "authenticate",
-                                               headers=headers,
-                                               data=data)
-
-    def test_get_login_progress_token(self):
-        """Should get the progress token from valid creds"""
-        self.auth.api.login.return_value.status_code = 200
-        self.auth.api.login.return_value.json.return_value = {
-            "progress_token": "qwfars"
-        }
-        data = {
-            "email": "bob@bob.com",
-            "password": "123456"
-        }
-        headers = {
-              "X-CSRF-Token": "abcde"
-        }
-        self.auth.db.email = "bob@bob.com"
-        self.auth.db.password = "123456"
-        returned_pt = self.auth.get_login_progress_token('abcde')
-        self.assertEqual("qwfars", returned_pt)
         self.auth.api.login.assert_called_with("POST",
                                                "authenticate",
                                                headers=headers,
