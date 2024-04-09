@@ -24,3 +24,4 @@ class Handler:
     def login(self):
         if self.state.login:
             self.auth.get_api_token()
+            self.targets.get_assessments()
