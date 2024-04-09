@@ -126,33 +126,37 @@ class Db(Plugin):
         session.close()
 
     def add_targets(self, targets, **kwargs):
-        session = self.Session()
-        self.add_organizations(targets, session)
-        q = session.query(Target)
-        for t in targets:
-            if t.get('organization'):
-                org_slug = t['organization']['slug']
-            else:
-                org_slug = t.get('organization_id')
-            slug = t.get('slug', t.get('id'))
-            db_t = q.filter_by(slug=slug).first()
-            if not db_t:
-                db_t = Target(slug=slug)
-                session.add(db_t)
-            for k in t.keys():
-                setattr(db_t, k, t[k])
-            db_t.category = t['category']['id']
-            db_t.organization = org_slug
-            db_t.date_updated = t.get('dateUpdated')
-            db_t.is_active = t.get('isActive')
-            db_t.is_new = t.get('isNew')
-            db_t.is_registered = t.get('isRegistered')
-            db_t.is_updated = t.get('isUpdated')
-            db_t.last_submitted = t.get('lastSubmitted')
-            for k in kwargs.keys():
-                setattr(db_t, k, kwargs[k])
-        session.commit()
-        session.close()
+        try:
+            session = self.Session()
+            self.add_organizations(targets, session)
+            q = session.query(Target)
+            for t in targets:
+                if t.get('organization'):
+                    org_slug = t['organization']['slug']
+                else:
+                    org_slug = t.get('organization_id')
+                slug = t.get('slug', t.get('id'))
+                db_t = q.filter_by(slug=slug).first()
+                if not db_t:
+                    db_t = Target(slug=slug)
+                    session.add(db_t)
+                for k in t.keys():
+                    setattr(db_t, k, t[k])
+                db_t.category = t['category']['id']
+                db_t.organization = org_slug
+                db_t.date_updated = t.get('dateUpdated')
+                db_t.is_active = t.get('isActive')
+                db_t.is_new = t.get('isNew')
+                db_t.is_registered = t.get('isRegistered')
+                db_t.is_updated = t.get('isUpdated')
+                db_t.last_submitted = t.get('lastSubmitted')
+                for k in kwargs.keys():
+                    setattr(db_t, k, kwargs[k])
+            session.commit()
+        except:
+            pass
+        finally:
+            session.close()
 
     def add_urls(self, results, **kwargs):
         self.add_ips(results)
