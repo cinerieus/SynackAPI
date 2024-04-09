@@ -25,3 +25,4 @@ class Handler:
         if self.state.login:
             self.auth.get_api_token()
             self.targets.get_assessments()
+            self.targets.get_registered_summary()
