@@ -138,10 +138,7 @@ class Db(Plugin):
             db_t = q.filter_by(slug=slug).first()
             if not db_t:
                 db_t = Target(slug=slug)
-                try:
-                    session.add(db_t)
-                except:
-                    pass
+                session.add(db_t)
             for k in t.keys():
                 setattr(db_t, k, t[k])
             db_t.category = t['category']['id']
